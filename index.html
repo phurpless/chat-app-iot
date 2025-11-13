@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MQTT Chat App - Pilih Topik</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+            overflow: hidden;
+            width: 100%;
+            max-width: 450px;
+            animation: slideUp 0.6s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 35px 25px;
+            text-align: center;
+            position: relative;
+        }
+
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 0;
+            right: 0;
+            height: 20px;
+            background: white;
+            border-radius: 20px 20px 0 0;
+        }
+
+        .header h1 {
+            font-size: 26px;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+            font-weight: 300;
+        }
+
+        .user-selection {
+            padding: 25px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .user-buttons {
+            display: flex;
+            gap: 12px;
+        }
+
+        .user-btn {
+            flex: 1;
+            padding: 16px;
+            border: 2px solid #667eea;
+            border-radius: 12px;
+            background: white;
+            color: #667eea;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .user-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .user-btn.active .user-avatar {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .topics-grid {
+            padding: 30px 25px;
+        }
+
+        .topic-card {
+            background: #f8f9fa;
+            border: 2px solid transparent;
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 18px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .topic-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            opacity: 0.1;
+            transition: left 0.4s ease;
+        }
+
+        .topic-card:hover::before {
+            left: 0;
+        }
+
+        .topic-card:hover {
+            border-color: #667eea;
+            transform: translateY(-4px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.2);
+        }
+
+        .topic-icon {
+            width: 55px;
+            height: 55px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 22px;
+            flex-shrink: 0;
+            z-index: 1;
+            transition: transform 0.3s ease;
+        }
+
+        .topic-card:hover .topic-icon {
+            transform: scale(1.1);
+        }
+
+        .topic-content {
+            flex: 1;
+            z-index: 1;
+        }
+
+        .topic-content h3 {
+            color: #333;
+            margin-bottom: 8px;
+            font-weight: 600;
+            font-size: 18px;
+        }
+
+        .topic-content p {
+            color: #666;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .topic-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 12px;
+            font-size: 12px;
+            color: #888;
+        }
+
+        .unread-badge {
+            background: #ff4444;
+            color: white;
+            border-radius: 12px;
+            padding: 4px 10px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .server-info {
+            padding: 15px 25px;
+            background: #f8f9fa;
+            border-top: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #4CAF50;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+            
+            .container {
+                border-radius: 15px;
+            }
+            
+            .header {
+                padding: 30px 20px;
+            }
+            
+            .user-selection, .topics-grid {
+                padding: 20px;
+            }
+            
+            .topic-card {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>MQTT Chat App</h1>
+            <p>Pilih Topik Percakapan</p>
+        </div>
+        
+        <div class="user-selection">
+            <div class="user-buttons">
+                <button class="user-btn active" onclick="selectUser('putro')">
+                    <div class="user-avatar">P</div>
+                    <span>Putro</span>
+                </button>
+                <button class="user-btn" onclick="selectUser('dirga')">
+                    <div class="user-avatar">D</div>
+                    <span>Dirga</span>
+                </button>
+            </div>
+        </div>
+        
+        <div class="topics-grid">
+            <div class="topic-card" onclick="selectTopic('kuliah')">
+                <div class="topic-icon">📚</div>
+                <div class="topic-content">
+                    <h3>Kuliah</h3>
+                    <p>Diskusi tentang perkuliahan, tugas, dan akademik</p>
+                    <div class="topic-meta">
+                        <span>Pesan terakhir: 2 menit lalu</span>
+                        <span class="unread-badge">3 pesan baru</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="topic-card" onclick="selectTopic('kerja')">
+                <div class="topic-icon">💼</div>
+                <div class="topic-content">
+                    <h3>Kerja</h3>
+                    <p>Pembahasan pekerjaan, project, dan profesional</p>
+                    <div class="topic-meta">
+                        <span>Pesan terakhir: 1 jam lalu</span>
+                        <span class="unread-badge">1 pesan baru</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="topic-card" onclick="selectTopic('wanita')">
+                <div class="topic-icon">💝</div>
+                <div class="topic-content">
+                    <h3>Wanita</h3>
+                    <p>Topik khusus percakapan wanita</p>
+                    <div class="topic-meta">
+                        <span>Pesan terakhir: 5 menit lalu</span>
+                        <span class="unread-badge">0 pesan baru</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="server-info">
+            <div class="connection-status">
+                <span class="status-dot"></span>
+                <span id="statusText">Terhubung ke Server</span>
+            </div>
+            <span>ESP32 MQTT</span>
+        </div>
+    </div>
+
+    <script>
+        let selectedUser = 'putro';
+        let selectedTopic = 'kuliah';
+
+        function selectUser(user) {
+            selectedUser = user;
+            
+            // Update button states
+            document.querySelectorAll('.user-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.currentTarget.classList.add('active');
+            
+            // Update UI based on user
+            updateUserInterface();
+        }
+
+        function selectTopic(topic) {
+            selectedTopic = topic;
+            
+            // Add click animation
+            const topicCard = event.currentTarget;
+            topicCard.style.transform = 'scale(0.98)';
+            
+            setTimeout(() => {
+                topicCard.style.transform = 'scale(1)';
+                
+                // Navigate to chat page
+                window.location.href = `chat.html?user=${selectedUser}&topic=${selectedTopic}`;
+            }, 150);
+        }
+
+        function updateUserInterface() {
+            // Update any user-specific UI elements here
+            console.log(`User selected: ${selectedUser}`);
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            switch(e.key) {
+                case '1':
+                    selectTopic('kuliah');
+                    break;
+                case '2':
+                    selectTopic('kerja');
+                    break;
+                case '3':
+                    selectTopic('wanita');
+                    break;
+                case 'p':
+                case 'P':
+                    selectUser('putro');
+                    break;
+                case 'd':
+                case 'D':
+                    selectUser('dirga');
+                    break;
+            }
+        });
+
+        // Add hover effects
+        document.querySelectorAll('.topic-card').forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-4px)';
+            });
+            
+            card.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0)';
+            });
+        });
+
+        // Double click to go directly to chat
+        document.querySelectorAll('.topic-card').forEach(card => {
+            card.addEventListener('dblclick', function() {
+                const topic = this.onclick.toString().match(/'([^']+)'/)[1];
+                window.location.href = `chat.html?user=${selectedUser}&topic=${topic}`;
+            });
+        });
+
+        // Initialize
+        console.log('MQTT Chat App Initialized');
+        console.log('Default User:', selectedUser);
+    </script>
+</body>
+</html>
